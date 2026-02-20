@@ -20,7 +20,7 @@ A powerful, AI-assisted document editor built with Next.js and Gemini AI.
 3.  **Set up Environment Variables**:
     Create a `.env.local` file in the root directory and add your Gemini API key:
     ```env
-    GEMINI_API_KEY=your_api_key_here
+    GEMINI_API_KEY=AIzaSyCM3FrJlGvMPcM1OYfuCm4nX89DItjRZOY
     ```
 4.  **Run the development server**:
     ```bash
