@@ -36,6 +36,7 @@ export function VersionTimeline({
     // State for selecting 2 arbitrary versions
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [isRestoring, setIsRestoring] = useState<string | null>(null)
+    const [restoreConfirm, setRestoreConfirm] = useState<DocumentVersionSummary | null>(null)
 
     const loadVersions = useCallback(async (pageNum: number, append = false) => {
         try {
@@ -63,9 +64,9 @@ export function VersionTimeline({
     }
 
     async function handleRestore(version: DocumentVersionSummary) {
-        if (!confirm(`Restore to v${version.version_number}? The current version will be auto-saved before restoring.`)) return
         try {
             setIsRestoring(version.id)
+            setRestoreConfirm(null)
             await restoreVersion(documentId, version.id, userId)
             // Reload versions after restore
             await loadVersions(0)
@@ -213,7 +214,7 @@ export function VersionTimeline({
                                     {/* Restore button */}
                                     {!isLatest && (
                                         <button
-                                            onClick={() => handleRestore(version)}
+                                            onClick={() => setRestoreConfirm(version)}
                                             disabled={isRestoring === version.id}
                                             style={{
                                                 fontSize: '0.7rem',
@@ -256,6 +257,20 @@ export function VersionTimeline({
                     </div>
                 )}
             </div>
+
+            {/* Restore Confirmation Modal */}
+            {restoreConfirm && (
+                <div className="chat-modal-overlay" style={{ position: 'fixed', zIndex: 1000 }}>
+                    <div className="chat-modal">
+                        <h3>Restore to v{restoreConfirm.version_number}?</h3>
+                        <p>The current version will be auto-saved before restoring.</p>
+                        <div className="chat-modal-actions">
+                            <button className="chat-modal-btn cancel" onClick={() => setRestoreConfirm(null)}>Cancel</button>
+                            <button className="chat-modal-btn confirm" onClick={() => handleRestore(restoreConfirm)}>Restore</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style dangerouslySetInnerHTML={{
                 __html: `
