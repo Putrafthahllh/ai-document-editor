@@ -1,19 +1,25 @@
 'use client'
 
 import { useRef, useEffect, useCallback, useState } from 'react'
+import type { CollaboratorPresence } from '@/hooks/useCollaboration'
+import { CursorOverlay } from '@/components/CursorOverlay'
 
 interface Props {
     content: string
     onChange: (content: string) => void
     searchTerm?: string
     activeMatch?: number
+    onCursorMove?: (line: number, col: number) => void
+    collaborators?: CollaboratorPresence[]
 }
 
-export default function DocumentEditor({ content, onChange, searchTerm, activeMatch }: Props) {
+export default function DocumentEditor({ content, onChange, searchTerm, activeMatch, onCursorMove, collaborators }: Props) {
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const lineNumbersRef = useRef<HTMLDivElement>(null)
     const backdropRef = useRef<HTMLDivElement>(null)
     const [lines, setLines] = useState<string[]>([])
+    const [scrollTop, setScrollTop] = useState(0)
+    const [scrollLeft, setScrollLeft] = useState(0)
 
     useEffect(() => {
         setLines(content.split('\n'))
@@ -34,6 +40,8 @@ export default function DocumentEditor({ content, onChange, searchTerm, activeMa
             backdrop.scrollTop = textarea.scrollTop
             backdrop.scrollLeft = textarea.scrollLeft
         }
+        setScrollTop(textarea.scrollTop)
+        setScrollLeft(textarea.scrollLeft)
     }, [])
 
     useEffect(() => {
@@ -42,6 +50,24 @@ export default function DocumentEditor({ content, onChange, searchTerm, activeMa
         textarea.addEventListener('scroll', syncScroll)
         return () => textarea.removeEventListener('scroll', syncScroll)
     }, [syncScroll])
+
+    // Track cursor position
+    function getCursorPosition(textarea: HTMLTextAreaElement): { line: number; col: number } {
+        const value = textarea.value
+        const selectionStart = textarea.selectionStart ?? 0
+        const textBeforeCursor = value.substring(0, selectionStart)
+        const cursorLines = textBeforeCursor.split('\n')
+        return {
+            line: cursorLines.length,
+            col: cursorLines[cursorLines.length - 1].length,
+        }
+    }
+
+    function handleCursorMove() {
+        if (!textareaRef.current || !onCursorMove) return
+        const pos = getCursorPosition(textareaRef.current)
+        onCursorMove(pos.line, pos.col)
+    }
 
     // Detect if a line looks like code (simple heuristic)
     function isCodeLine(line: string): boolean {
@@ -109,9 +135,6 @@ export default function DocumentEditor({ content, onChange, searchTerm, activeMa
                 .replace(regex, (match) => {
                     const cls = matchIndex === activeMatch ? 'search-highlight-active' : 'search-highlight'
                     matchIndex++
-                    // Important: The text inside mark must be present for spacing, but visibility hidden is inherited?
-                    // No, we want the MARK background to be visible.
-                    // The text content itself is hidden by parent color: transparent.
                     return `<mark class="${cls}">${match}</mark>`
                 }) + '\n '
         } catch {
@@ -148,10 +171,22 @@ export default function DocumentEditor({ content, onChange, searchTerm, activeMa
                         className="doc-textarea"
                         value={content}
                         onChange={(e) => onChange(e.target.value)}
+                        onMouseUp={handleCursorMove}
+                        onKeyUp={handleCursorMove}
+                        onSelect={handleCursorMove}
                         placeholder="Start typing or ask AI to help you write..."
                         spellCheck={false}
                         onScroll={syncScroll}
                     />
+                    {collaborators && collaborators.length > 0 && (
+                        <CursorOverlay
+                            collaborators={collaborators}
+                            textareaRef={textareaRef}
+                            content={content}
+                            scrollTop={scrollTop}
+                            scrollLeft={scrollLeft}
+                        />
+                    )}
                 </div>
             </div>
         </div>

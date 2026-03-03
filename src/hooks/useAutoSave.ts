@@ -1,40 +1,43 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-
+import { useEffect, useRef, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
 
 export function useAutoSave(documentId: string | null, content: string) {
     const savedContentRef = useRef(content)
     const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved')
 
     useEffect(() => {
         if (!documentId) return
         if (content === savedContentRef.current) return
 
+        setSaveStatus('saving')
+
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current)
         }
 
-        timeoutRef.current = setTimeout(() => {
-            // LocalStorage Save
+        timeoutRef.current = setTimeout(async () => {
             try {
-                // Get existing docs to update them
-                const savedDocs = localStorage.getItem('claridoc-documents')
-                if (savedDocs) {
-                    const docs = JSON.parse(savedDocs)
-                    const updatedDocs = docs.map((doc: any) =>
-                        doc.id === documentId
-                            ? { ...doc, content, updated_at: new Date().toISOString() }
-                            : doc
-                    )
-                    localStorage.setItem('claridoc-documents', JSON.stringify(updatedDocs))
-                }
+                const { error } = await supabase
+                    .from('documents')
+                    .update({
+                        content,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', documentId)
+
+                if (error) throw error
+
                 savedContentRef.current = content
-                console.log('Auto-saved to LocalStorage')
-            } catch (e) {
-                console.error('Failed to auto-save to LocalStorage', e)
+                setSaveStatus('saved')
+                console.log('Auto-saved to Supabase')
+            } catch (err) {
+                console.error('Auto-save failed:', err)
+                setSaveStatus('error')
             }
-        }, 1000)
+        }, 2000)
 
         return () => {
             if (timeoutRef.current) {
@@ -42,4 +45,6 @@ export function useAutoSave(documentId: string | null, content: string) {
             }
         }
     }, [documentId, content])
+
+    return { saveStatus }
 }

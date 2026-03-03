@@ -1,5 +1,5 @@
 {
-  "name": "ai-document-editor",
+  "name": "my-first-nextjs",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -13,6 +13,8 @@
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.96.0",
     "@types/prismjs": "^1.26.6",
+    "diff": "^8.0.3",
+    "nanoid": "^5.1.6",
     "next": "16.1.1",
     "prismjs": "^1.30.0",
     "react": "19.2.3",
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/diff": "^7.0.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

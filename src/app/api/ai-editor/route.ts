@@ -1,7 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import type { Part } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
 import { functionTools } from '@/lib/function-tools'
 import { executeFunctionCall } from '@/lib/execute-function'
+
+interface ChatMessage {
+    role: 'user' | 'assistant'
+    content: string
+}
 
 function formatDocumentForAI(content: string): string {
     const lines = content.split('\n')
@@ -12,7 +18,11 @@ export async function POST(request: NextRequest) {
     try {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
         const body = await request.json()
-        const { messages, documentContent, file } = body
+        const { messages, documentContent, file } = body as {
+            messages: ChatMessage[]
+            documentContent: string
+            file: { data: string; type: string } | null
+        }
 
         const documentWithLines = formatDocumentForAI(documentContent)
         const lineCount = documentContent.split('\n').length
@@ -39,17 +49,15 @@ Rules:
 5. If the document is empty, use append_to_document to add content`
 
         // Build history for the chat model
-        // Convert 'user'/'assistant' roles to 'user'/'model'
-        const history = messages.slice(0, -1).map((m: any) => ({
-            role: m.role === 'assistant' ? 'model' : 'user',
+        const history = messages.slice(0, -1).map((m: ChatMessage) => ({
+            role: m.role === 'assistant' ? 'model' as const : 'user' as const,
             parts: [{ text: m.content }]
         }))
 
-        // Use the model requested by user (likely 2.5-flash) which was found to exist
         const model = genAI.getGenerativeModel({
             model: 'gemini-2.5-flash',
             systemInstruction: systemPrompt,
-            tools: functionTools
+            tools: functionTools,
         })
 
         const chat = model.startChat({
@@ -58,11 +66,10 @@ Rules:
 
         // Build the current user message parts
         const userMessage = messages[messages.length - 1]
-        const contentParts: any[] = []
+        const contentParts: Part[] = []
 
         // Add file if present (multimodal)
         if (file) {
-            // Remove data:image/...;base64, prefix if present
             const base64Data = file.data.includes('base64,')
                 ? file.data.split('base64,')[1]
                 : file.data
@@ -83,19 +90,17 @@ Rules:
         let text = response.text()
 
         // Handle function calls
-        // @google/generative-ai v0.24+ handles function calls differently than v1 SDK
-        // We check for functionCalls in the response candidates
         const functionCalls = response.functionCalls()
 
         if (functionCalls && functionCalls.length > 0) {
             const fc = functionCalls[0]
             const fcName = fc.name
-            const fcArgs = fc.args
+            const fcArgs = fc.args as Record<string, unknown>
 
             console.log('Function call:', fcName, fcArgs)
 
             // Execute the function
-            const executionResult = executeFunctionCall(fcName, fcArgs as any, documentContent)
+            const executionResult = executeFunctionCall(fcName, fcArgs, documentContent)
 
             if (!executionResult.success) {
                 return NextResponse.json({
@@ -108,12 +113,9 @@ Rules:
             }
 
             // Send result back to AI
-            // In @google/generative-ai, we simply send the function response
             const newDocumentWithLines = formatDocumentForAI(executionResult.newContent!)
             const newLineCount = executionResult.newContent!.split('\n').length
 
-            // Send function response
-            // The format for sending function response in chat
             result = await chat.sendMessage([
                 {
                     functionResponse: {

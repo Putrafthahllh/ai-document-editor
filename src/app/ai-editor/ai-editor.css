@@ -1463,3 +1463,183 @@
   color: var(--ed-fg);
   background: var(--ed-accent-dim);
 }
+
+/* ==================== COLLABORATION: PRESENCE ==================== */
+.presence-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.75rem;
+}
+
+.presence-avatars {
+  display: flex;
+  flex-direction: row;
+}
+
+.presence-avatars .presence-avatar+.presence-avatar {
+  margin-left: -0.4rem;
+}
+
+.presence-avatar {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #fff;
+  border: 2px solid var(--ed-bg);
+  cursor: default;
+  transition: transform 0.15s ease;
+}
+
+.presence-avatar:hover {
+  transform: scale(1.15);
+  z-index: 2;
+}
+
+.presence-label {
+  font-size: 0.7rem;
+  color: var(--ed-muted);
+  white-space: nowrap;
+}
+
+.presence-live {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.presence-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.presence-dot--live {
+  background: #22c55e;
+  animation: presencePulse 2s ease-in-out infinite;
+}
+
+.presence-dot--connecting {
+  background: #a3a3a3;
+}
+
+@keyframes presencePulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* ==================== COLLABORATION: CURSOR OVERLAY ==================== */
+.cursor-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.cursor-remote {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: left 0.08s ease, top 0.08s ease;
+}
+
+.cursor-line {
+  width: 2px;
+  height: 1.2em;
+  border-radius: 1px;
+  animation: cursorBlink 1.2s ease-in-out infinite;
+}
+
+@keyframes cursorBlink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.cursor-label {
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: -1.4em;
+  margin-left: 4px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+/* ==================== COLLABORATION: TYPING INDICATOR ==================== */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.7rem;
+  color: var(--ed-muted);
+  background: var(--ed-surface);
+  border-bottom: 1px solid var(--ed-border);
+}
+
+.typing-dots {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.typing-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ed-muted);
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
